@@ -309,10 +309,12 @@ source ~/.bashrc
 ```bash
 vim ~/Build_WRF/WRF-4.1.2/dyn_em/module_initialize_ideal.F
 ```
+这个文件主要用于控制羽流初始排放情况，详细修改需参考[Peisipand](https://peisipand.github.io/2022/06/10/WRF_Compiling_and_running_LES/)的博客。
+
+实际使用的时候发现不修改这个文件也可以生成持续排放的羽流。
 ```bash
 source ~/.bashrc
 ```
-以上修改可参考
 #### 4.1.4 compile LES
 ```bash
 cd ~/Build_WRF/WRF-4.1.2
@@ -325,4 +327,166 @@ ls -ls main/*.exe
 ```
 出现2个.exe即为成功
 
-###2 4.1.1 Registry.EM
+#### 4.1.5 input_sounding
+- 第一行三个数据依次为
+    + 气压 surface Pressure (mb)
+    + 温度 surface potential Temperature (K)
+    + 水汽 Surface vapor mixing ratio (g/kg)
+
+- 第二行开始为
+    + 海拔 Height (m)
+    + 位温 Potential temperature (K)
+    + 水汽 Water vapor Mixing ratio (g/kg)
+    + U风 U wind speed (m/s)
+    + V风 V wind speed (m/s)
+
+[参考网站](https://home.chpc.utah.edu/~u0631741/wrf-sfire/WRF_Sfire_in_ideal_cases.pdf)
+```text
+ 1000.00     300.00       0.00
+   10.00     300.00       0.00       1.00      0.00
+  250.00     300.45       0.00       1.00      0.00
+  750.00     301.25       0.00       1.00      0.00
+ 1250.00     302.00       0.00       1.00      0.00
+ 1750.00     303.93       0.00       1.00      0.00
+ 2250.00     305.00       0.00       1.00      0.00
+ 2750.00     306.00       0.00       1.00      0.00
+ 3250.00     308.00       0.00       1.00      0.00
+ 3750.00     310.00       0.00       1.00      0.00     
+ 4250.00     311.00       0.00       1.00      0.00
+ 4750.00     313.00       0.00       1.00      0.00
+ ```
+ #### 4.1.6 namelist.input
+ ```text
+  &time_control
+ run_days                            = 0,
+ run_hours                           = 2,
+ run_minutes                         = 00,
+ run_seconds                         = 00,
+ start_year                          = 0001, 0001, 0001, 
+ start_month                         = 01,   01,   01,  
+ start_day                           = 01,   01,   01, 
+ start_hour                          = 00,   00,   00,  
+ start_minute                        = 00,   00,   00,  
+ start_second                        = 00,   00,   00,  
+ end_year                            = 0001, 0001, 0001, 
+ end_month                           = 01,   01,   01,   
+ end_day                             = 01,   01,   01,  
+ end_hour                            = 02,   02,   02, 
+ end_minute                          = 00,   00,   00,  
+ end_second                          = 00,   00,   00,  
+ history_outname                     = '/home/why/Data/WRF_OUT/wrfout_d<domain>_<date>'
+ history_interval_m                  = 00,   00,   00,  
+ history_interval_s                  = 30,   30,   30,  
+ frames_per_outfile                  = 1,    1,    1, 
+ restart                             = .false.,
+ restart_interval_m                  = 60,
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ debug_level                         = 0
+ /
+
+ &domains
+ time_step                           = 0, ! 积分步长的整数部分
+ time_step_fract_num                 = 3, ! 积分步长的分数部分
+ time_step_fract_den                 = 10, ! 表示 0.3 > 0.18
+ max_dom                             = 1,
+ s_we                                = 1,     1,    1,
+ e_we                                = 202,   202,  202,
+ s_sn                                = 1,     1,    1,
+ e_sn                                = 202,   202,  202,
+ s_vert                              = 1,     1,    1,
+ e_vert                              = 51,    51,   51,
+ dx                                  = 30,    
+ dy                                  = 30,   
+ ztop                                = 5000,  5000,  5000,
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 1,     1,     2,
+ i_parent_start                      = 1,     316,   15,  
+ j_parent_start                      = 1,     166,   30,   
+ parent_grid_ratio                   = 1,     3,     3,
+ parent_time_step_ratio              = 1,     3,     3,
+ feedback                            = 0,
+ smooth_option                       = 0
+ /
+
+ &physics
+ mp_physics                          = 0,     0,      0, 
+ ra_lw_physics                       = 0,     0,      0, 
+ ra_sw_physics                       = 0,     0,      0,  
+ radt                                = 0,     0,      0, 
+ sf_sfclay_physics                   = 1,     1,      1,
+ sf_surface_physics                  = 0,     0,      0,   
+ bl_pbl_physics                      = 0,     0,      0, 
+ bldt                                = 0,     0,      0, 
+ cu_physics                          = 0,     0,      0, 
+ cudt                                = 0,     0,      0,   
+ isfflx                              = 2,
+ num_soil_layers                     = 5,
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ tracer_opt                          = 2,      2,      2    ! Create Plume
+ rk_ord                              = 3,
+ diff_opt                            = 2,      2,      2,
+ km_opt                              = 2,      2,      2,
+ damp_opt                            = 0,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.2,    0.2,    0.2,    
+ khdif                               = 1.,      1.,     1.,   
+ kvdif                               = 1.,      1.,     1.,   
+ c_s                                 = 0.18
+ c_k                                 = 0.10
+ mix_isotropic                       = 1
+ smdiv                               = 0.1,    0.1,     0.1, 
+ emdiv                               = 0.01,   0.01,    0.01,
+ epssm                               = 0.1,    0.1,     0.1, 
+ tke_heat_flux                       = 0.24,   0.24,    0.24, 
+ time_step_sound                     = 6,      6,       6, 
+ h_mom_adv_order                     = 5,      5,       5, 
+ v_mom_adv_order                     = 3,      3,       3,  
+ h_sca_adv_order                     = 5,      5,       5,
+ v_sca_adv_order                     = 3,      3,        3,  
+ mix_full_fields                     = .true., .true.,  .true., 
+ non_hydrostatic                     = .true., .true.,  .true., 
+ pert_coriolis                       = .true., .true.,  .true., 
+ use_theta_m                         = 1,
+ /
+
+ &bdy_control
+ periodic_x                          = .false., .false.,.false.,
+ symmetric_xs                        = .false.,.false.,.false.,
+ symmetric_xe                        = .false.,.false.,.false.,
+ open_xs                             = .true.,.false.,.false.,
+ open_xe                             = .true.,.false.,.false.,
+ periodic_y                          = .false., .false.,.false.,
+ symmetric_ys                        = .false.,.false.,.false.,
+ symmetric_ye                        = .false.,.false.,.false.,
+ open_ys                             = .true.,.false.,.false.,
+ open_ye                             = .true.,.false.,.false.,
+ nested                              = .false., .true.,  .true., 
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /
+ 
+ &ideal
+ ideal_case = 9
+ /
+ ```
+### 4.2 Run WRF-LES
+```bash
+./ideal.exe
+```
+```bash
+./wrf.exe
+```
